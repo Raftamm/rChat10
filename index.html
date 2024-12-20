@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>rChat</title>
+    <!-- Link Google Fonts per font moderni -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.19.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.19.1/firebase-database.js"></script>
+
+    <style>
+        /* Stili globali */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Inter', sans-serif;
+        }
+
+        body {
+            background-color: #121212;
+            color: #eee;
+            font-size: 16px;
+            line-height: 1.6;
+            padding-top: 60px;
+            overflow-x: hidden;
+        }
+
+        h1, h2 {
+            color: #fff;
+        }
+
+        a {
+            text-decoration: none;
+            color: inherit;
+        }
+
+        /* Header */
+        header {
+            position: fixed;
+            top: 0;
+            width: 100%;
+            background-color: transparent;
+            color: #fff;
+            padding: 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 100;
+        }
+
+        header .logo h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: #00e5ff;
+        }
+
+        #toggleHeaderBtn {
+            background: none;
+            border: none;
+            color: #fff;
+            font-size: 30px;
+            cursor: pointer;
+        }
+
+        /* Animazioni */
+        @keyframes fadeIn {
+            0% { opacity: 0; }
+            100% { opacity: 1; }
+        }
+
+        @keyframes slideIn {
+            0% { transform: translateX(-100%); }
+            100% { transform: translateX(0); }
+        }
+
+        /* Sezioni */
+        .section {
+            padding: 100px 20px;
+            text-align: center;
+            margin-top: 60px;
+            opacity: 0;
+            animation: fadeIn 1s ease-out forwards;
+        }
+
+        #directions, #chat, #contact, #regulation {
+            background-color: #1e1e1e;
+            border-radius: 15px;
+            margin-bottom: 50px;
+        }
+
+        #directions h2, #chat h2, #contact h2, #regulation h2 {
+            margin-bottom: 20px;
+        }
+
+        /* Chat */
+        .chat-container {
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+            height: 600px;
+            border-radius: 15px;
+            padding: 20px;
+            background-color: #2a2a2a;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            overflow-y: auto;
+        }
+
+        .messages {
+            margin-top: 20px;
+            max-height: 500px;
+            overflow-y: auto;
+        }
+
+        .message {
+            background-color: #333;
+            border-radius: 10px;
+            padding: 10px 15px;
+            margin-bottom: 10px;
+            animation: fadeIn 0.5s ease;
+        }
+
+        .message .name {
+            font-weight: bold;
+            color: #00e5ff;
+        }
+
+        .input-group {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        input, textarea {
+            padding: 15px;
+            border: none;
+            border-radius: 10px;
+            font-size: 1rem;
+            width: 100%;
+            background-color: #333;
+            color: #eee;
+            transition: background-color 0.3s;
+        }
+
+        input:focus, textarea:focus {
+            background-color: #444;
+        }
+
+        button {
+            padding: 15px;
+            background-color: #00e5ff;
+            color: #000;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: background-color 0.3s;
+        }
+
+        button:hover {
+            background-color: #00b8d4;
+        }
+
+        /* Menu a tendina */
+        nav ul {
+            display: none;
+            position: absolute;
+            top: 60px;
+            right: 20px;
+            background-color: #1c1c1c;
+            padding: 15px;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+            list-style: none;
+        }
+
+        nav ul li {
+            padding: 10px;
+            text-align: center;
+        }
+
+        nav ul.active {
+            display: block;
+            animation: slideIn 0.3s ease-out;
+        }
+
+        nav ul li a {
+            color: #fff;
+        }
+
+        nav ul li a:hover {
+            color: #00e5ff;
+        }
+
+        /* Stile per le immagini */
+        .message img {
+            max-width: 70%;
+            border-radius: 10px;
+            margin-top: 10px;
+        }
+
+        /* Media Queries */
+        @media (max-width: 768px) {
+            header .logo h1 {
+                font-size: 2rem;
+            }
+
+            .input-group {
+                gap: 15px;
+            }
+
+            .chat-container {
+                height: 450px;
+            }
+
+            .messages {
+                margin: 0;
+                padding: 10px;
+            }
+        }
+
+    </style>
+</head>
+<body>
+
+    <!-- Header con solo il menu a tendina -->
+    <header id="header">
+        <div class="logo">
+            <h1>rChat</h1>
+        </div>
+        <button id="toggleHeaderBtn">☰</button>
+    </header>
+
+    <!-- Menu a tendina -->
+    <nav>
+        <ul id="navMenu">
+            <li><a href="#directions">Direttive</a></li>
+            <li><a href="#chat">Chat</a></li>
+            <li><a href="#contact">Supporto</a></li>
+            <li><a href="#regulation">Regolamento</a></li>
+        </ul>
+    </nav>
+
+    <!-- Sezioni -->
+    <main>
+        <!-- Direttive -->
+        <section id="directions" class="section">
+            <h2>Benvenuto in rChat!</h2>
+            <p>rChat è una piattaforma moderna dove puoi connetterti con altri utenti in tempo reale, inviare messaggi, e comunicare facilmente!</p>
+            <p>Leggi il regolamento, rispetta le direttive e divertiti!</p>
+        </section>
+
+        <!-- Chat -->
+        <section id="chat" class="section">
+            <h2>Chat</h2>
+            <div class="chat-container">
+                <div id="chatMessages" class="messages"></div>
+                <form id="chatForm">
+                    <div class="input-group">
+                        <input type="text" id="userName" placeholder="Inserisci il tuo nome" required />
+                        <textarea id="userMessage" placeholder="Scrivi un messaggio" required></textarea>
+                        <input type="file" id="imageInput" accept="image/*" capture="camera" />
+                        <button type="submit" id="sendMessageBtn">Invia</button>
+                    </div>
+                </form>
+            </div>
+        </section>
+
+        <!-- Supporto -->
+        <section id="contact" class="section">
+            <h2>Supporto</h2>
+            <p>Se hai bisogno di aiuto, contattaci via email: <a href="mailto:raftamm10@gmail.com" style="color: #00e5ff;">raftamm10@gmail.com</a></p>
+        </section>
+
+        <!-- Regolamento -->
+        <section id="regulation" class="section">
+            <h2>Regolamento</h2>
+            <ul>
+                <li>Non è permesso inviare messaggi offensivi o volgari.</li>
+                <li>Rispetta gli altri utenti e mantieni un comportamento civile.</li>
+                <li>Non inviare spam o messaggi pubblicitari.</li>
+                <li>Ogni violazione del regolamento porterà a un ban temporaneo o permanente.</li>
+            </ul>
+        </section>
+    </main>
+
+    <!-- Script JS -->
+    <script>
+        // Configurazione di Firebase
+        const firebaseConfig = {
+            apiKey: "YOUR_API_KEY",
+            authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
+            databaseURL: "https://YOUR_PROJECT_ID.firebaseio.com",
+            projectId: "YOUR_PROJECT_ID",
+            storageBucket: "YOUR_PROJECT_ID.appspot.com",
+            messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
+            appId: "YOUR_APP_ID"
+        };
+
+        const app = firebase.initializeApp(firebaseConfig);
+        const database = firebase.database(app);
+
+        // Toggling del menu a tendina
+        document.getElementById('toggleHeaderBtn').addEventListener('click', function () {
+            document.getElementById('navMenu').classList.toggle('active');
+        });
+
+        // Funzione per inviare messaggi
+        function sendMessage(event) {
+            event.preventDefault();
+
+            const userName = document.getElementById('userName').value;
+            const userMessage = document.getElementById('userMessage').value;
+            const imageInput = document.getElementById('imageInput').files[0];
+
+            const messagesRef = database.ref('messages');
+            const newMessage = { name: userName, message: userMessage, timestamp: Date.now() };
+
+            if (imageInput) {
+                const reader = new FileReader();
+                reader.onload = function (e) {
+                    newMessage.image = e.target.result;
+                    messagesRef.push(newMessage);
+                };
+                reader.readAsDataURL(imageInput);
+            } else {
+                messagesRef.push(newMessage);
+            }
+
+            // Resetta il form
+            document.getElementById('chatForm').reset();
+        }
+
+        // Visualizza messaggi in tempo reale
+        function displayMessages(snapshot) {
+            const messagesContainer = document.getElementById('chatMessages');
+            const messages = snapshot.val();
+            messagesContainer.innerHTML = '';
+
+            for (const key in messages) {
+                const message = messages[key];
+                const messageContainer = document.createElement('div');
+                messageContainer.classList.add('message');
+                messageContainer.innerHTML = `
+                    <p class="name">${message.name}</p>
+                    <p>${message.message}</p>
+                `;
+                if (message.image) {
+                    const img = document.createElement('img');
+                    img.src = message.image;
+                    messageContainer.appendChild(img);
+                }
+                messagesContainer.appendChild(messageContainer);
+            }
+        }
+
+        // Ascolta l'aggiunta di nuovi messaggi
+        const messagesRef = database.ref('messages');
+        messagesRef.on('child_added', displayMessages);
+
+        // Aggiungi l'evento di invio del form
+        document.getElementById('chatForm').addEventListener('submit', sendMessage);
+    </script>
+</body>
+</html>
